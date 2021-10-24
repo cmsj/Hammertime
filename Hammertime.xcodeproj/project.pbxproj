@@ -16,6 +16,7 @@
 		4F117FB92721639300420679 /* Private-CoreGraphics.h in Headers */ = {isa = PBXBuildFile; fileRef = 4F117FB82721636C00420679 /* Private-CoreGraphics.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4F117FBB2723675B00420679 /* CGDirectDisplayID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FBA2723675B00420679 /* CGDirectDisplayID.swift */; };
 		4F117FBD2724D34E00420679 /* HTScreenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FBC2724D34E00420679 /* HTScreenManager.swift */; };
+		4F6FAC1F2725DD2200000650 /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F6FAC1E2725DD2200000650 /* DisplayServices.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +40,8 @@
 		4F117FB82721636C00420679 /* Private-CoreGraphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Private-CoreGraphics.h"; sourceTree = "<group>"; };
 		4F117FBA2723675B00420679 /* CGDirectDisplayID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGDirectDisplayID.swift; sourceTree = "<group>"; };
 		4F117FBC2724D34E00420679 /* HTScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTScreenManager.swift; sourceTree = "<group>"; };
+		4F6FAC1E2725DD2200000650 /* DisplayServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DisplayServices.framework; path = ../../../../System/Library/PrivateFrameworks/DisplayServices.framework; sourceTree = "<group>"; };
+		4F6FAC202725DFAB00000650 /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = ../../../../System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F6FAC1F2725DD2200000650 /* DisplayServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +70,7 @@
 				4F117F972720650000420679 /* Hammertime */,
 				4F117FA32720650000420679 /* HammertimeTests */,
 				4F117F962720650000420679 /* Products */,
+				4F6FAC1D2725DD2200000650 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -122,6 +127,15 @@
 				4F117FB82721636C00420679 /* Private-CoreGraphics.h */,
 			);
 			path = Headers;
+			sourceTree = "<group>";
+		};
+		4F6FAC1D2725DD2200000650 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4F6FAC202725DFAB00000650 /* CoreDisplay.framework */,
+				4F6FAC1E2725DD2200000650 /* DisplayServices.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -410,6 +424,10 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Debug;
 		};
@@ -441,6 +459,10 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Release;
 		};

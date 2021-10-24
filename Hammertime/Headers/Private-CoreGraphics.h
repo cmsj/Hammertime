@@ -5,8 +5,14 @@
 //  Created by Chris Jones on 21/10/2021.
 //
 
+#import <AppKit/AppKit.h>
+
 #ifndef Private_CoreGraphics_h
 #define Private_CoreGraphics_h
+
+// DisplayServices private API used for getting/setting display brightness on Apple Silicon machines
+int DisplayServicesGetBrightness(CGDirectDisplayID display, float *brightness);
+int DisplayServicesSetBrightness(CGDirectDisplayID display, float brightness);
 
 // CoreGraphics DisplayMode struct used in private APIs
 typedef struct {

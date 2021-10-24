@@ -18,16 +18,33 @@ class HammertimeTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+    func testGetMainScreen() throws {
+        let mainScreen = HTScreenManager.mainScreen()
+
+        XCTAssertNotNil(mainScreen)
+        XCTAssertNotEqual(mainScreen?.id, 0)
+        XCTAssertNotEqual(mainScreen?.name, "")
+        XCTAssertTrue([0, 90, 180, 270].contains(mainScreen?.rotation))
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    func testBrightness() throws {
+        let mainScreen = HTScreenManager.mainScreen()
+
+        let origBrightness = mainScreen?.brightness
+
+        mainScreen?.brightness = 1.0
+        XCTAssertEqual(mainScreen?.brightness, 1.0)
+
+        mainScreen?.brightness = 0.0
+        XCTAssertEqual(mainScreen?.brightness, 0.0)
+
+        mainScreen?.brightness = origBrightness!
     }
 
+    func testSnapshot() throws {
+        let mainScreen = HTScreenManager.mainScreen()
+
+        let snapshot = mainScreen?.snapshot()
+        XCTAssertNotNil(snapshot)
+    }
 }

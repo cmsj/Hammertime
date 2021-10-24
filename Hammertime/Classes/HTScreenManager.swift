@@ -10,9 +10,32 @@ import Cocoa
 
 struct HTGammaTable {
     var id: CGDirectDisplayID
-    var red: [Float]
-    var green: [Float]
-    var blue: [Float]
+    var red: [CGGammaValue]
+    var green: [CGGammaValue]
+    var blue: [CGGammaValue]
+}
+
+private func displayReconfigurationCallback(screenID: CGDirectDisplayID,
+                                            flags: CGDisplayChangeSummaryFlags,
+                                            userInfo: UnsafeMutableRawPointer?) {
+    if (flags.contains(.addFlag)) {
+        HTScreenManager.shared.storeInitialScreenGamma(screenID)
+    } else if (flags.contains(.removeFlag)) {
+        HTScreenManager.shared.removeGammaTableForDisplay(screenID)
+        // FIXME: Something something currentGammas?
+    } else if (flags.contains(.disabledFlag)) {
+        // FIXME: Remove from currentGammas
+    } else if (flags.contains(.enabledFlag) || flags.contains(.beginConfigurationFlag)) {
+        // NOOP
+    } else {
+        // Some kind of display reconfiguration occurred, but it didn't involve any hardware being added/removed
+        // We'll re-apply our current gammas if we have them.
+        // We also have to wait a few seconds to do this, so the display reconfiguration can complete.
+        // FIXME:
+//                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//                    screen_gammaReapply(display);
+//                });
+    }
 }
 
 @objc
@@ -28,12 +51,21 @@ class HTScreenManager: NSObject {
 
         super.init()
 
+        start()
+    }
+
+    func start() {
         storeAllInitialScreenGammas()
+        CGDisplayRegisterReconfigurationCallback(displayReconfigurationCallback, nil)
+    }
+
+    func stop() {
+        CGDisplayRemoveReconfigurationCallback(displayReconfigurationCallback, nil)
     }
 
     /// Get the main screen (i.e. the screen containing the currently focused window)
     /// - Returns: An HTScreen object, or nil if there is no main screen
-    func mainScreen() -> HTScreen? {
+    static func mainScreen() -> HTScreen? {
         if let screen = NSScreen.main {
             return HTScreen(screen)
         } else {
@@ -43,8 +75,25 @@ class HTScreenManager: NSObject {
 
     /// Get all screens currently available
     /// - Returns: An array of HTScreen objects
-    func allScreens() -> [HTScreen] {
+    static func allScreens() -> [HTScreen] {
         return NSScreen.screens.map { HTScreen($0) }
+    }
+
+    func gammaTableForDisplayID(_ display: CGDirectDisplayID) -> HTGammaTable? {
+        return originalGammas.first { table in
+            table.id == Int(display)
+        }
+    }
+
+    func setGammaTableForDisplay(_ table: HTGammaTable) {
+        removeGammaTableForDisplay(table.id)
+        originalGammas.append(table)
+    }
+
+    func removeGammaTableForDisplay(_ display: CGDirectDisplayID) {
+        originalGammas = originalGammas.filter { oldTable in
+            oldTable.id != display
+        }
     }
 
     func storeAllInitialScreenGammas() {
@@ -75,30 +124,11 @@ class HTScreenManager: NSObject {
             return
         }
 
-        var red   = [Float](repeating: 0, count: Int(capacity))
-        var green = [Float](repeating: 0, count: Int(capacity))
-        var blue  = [Float](repeating: 0, count: Int(capacity))
-
-        for i in 0..<Int(count) {
-            red.insert(redTable[i], at: i)
-            green.insert(greenTable[i], at: i)
-            blue.insert(blueTable[i], at: i)
-        }
-
-        originalGammas.append(HTGammaTable(id: display, red: red, green: green, blue: blue))
+        setGammaTableForDisplay(HTGammaTable(id: display, red: redTable, green: greenTable, blue: blueTable))
     }
 
-    func gammaTableForDisplayID(_ display: CGDirectDisplayID) -> HTGammaTable? {
-        return originalGammas.first { table in
-            table.id == Int(display)
-        }
-    }
-
-    func setGammaTableForDisplay(_ table: HTGammaTable) {
-        var filteredGammas = originalGammas.filter { oldTable in
-            oldTable.id != table.id
-        }
-        filteredGammas.append(table)
-        originalGammas = filteredGammas
+    func restoreGammas() {
+        CGDisplayRestoreColorSyncSettings()
+        currentGammas.removeAll()
     }
 }

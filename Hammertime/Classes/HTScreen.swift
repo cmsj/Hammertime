@@ -220,38 +220,22 @@ class HTScreen: NSObject {
             return false
         }
 
-        let redArray   = originalGamma.red
-        let greenArray = originalGamma.green
-        let blueArray  = originalGamma.blue
+        let originalReds   = originalGamma.red
+        let originalGreens = originalGamma.green
+        let originalBlues  = originalGamma.blue
 
-        let count = redArray.count
+        let count = originalReds.count
 
         var redTable   = [CGGammaValue](repeating: 0, count: count)
         var greenTable = [CGGammaValue](repeating: 0, count: count)
         var blueTable  = [CGGammaValue](repeating: 0, count: count)
 
-        var red   = [Float](repeating: 0, count: count)
-        var green = [Float](repeating: 0, count: count)
-        var blue  = [Float](repeating: 0, count: count)
-
         for i in 0..<count {
-            let origRed = redArray[i]
-            let origGreen = greenArray[i]
-            let origBlue = blueArray[i]
+            redTable[i] = blackpoint.red + (whitepoint.red - blackpoint.red) * originalReds[i]
+            greenTable[i] = blackpoint.green + (whitepoint.green - blackpoint.green) * originalGreens[i]
+            blueTable[i] = blackpoint.blue + (whitepoint.blue - blackpoint.blue) * originalBlues[i]
 
-            let newRed = blackpoint.red + (whitepoint.red - blackpoint.red) * origRed
-            let newGreen = blackpoint.green + (whitepoint.green - blackpoint.green) * origGreen
-            let newBlue = blackpoint.blue + (whitepoint.blue - blackpoint.blue) * origBlue
-
-            redTable[i] = newRed
-            greenTable[i] = newGreen
-            blueTable[i] = newBlue
-
-            red.insert(redTable[i], at: i)
-            green.insert(greenTable[i], at: i)
-            blue.insert(blueTable[i], at: i)
-
-            HTScreenManager.shared.setGammaTableForDisplay(HTGammaTable(id: id, red: red, green: green, blue: blue))
+            HTScreenManager.shared.setGammaTableForDisplay(HTGammaTable(id: id, red: redTable, green: greenTable, blue: blueTable))
         }
 
         let result = CGSetDisplayTransferByTable(id, UInt32(count), redTable, greenTable, blueTable)
@@ -261,6 +245,18 @@ class HTScreen: NSObject {
         }
 
         return true
+    }
+
+    // FIXME: This won't work on Apple Silicon until we figure out how to get DisplayServices{Get,Set}Brightness working
+    var brightness: Float {
+        get {
+            var brightness: Float = 0.0
+            DisplayServicesGetBrightness(id, &brightness)
+            return brightness
+        }
+        set {
+            DisplayServicesSetBrightness(id, newValue)
+        }
     }
 
     // MARK: - Private CoreGraphics API use beyond this point
