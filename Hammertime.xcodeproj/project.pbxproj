@@ -11,6 +11,11 @@
 		4F117FA02720650000420679 /* Hammertime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F117F952720650000420679 /* Hammertime.framework */; };
 		4F117FA52720650000420679 /* HammertimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FA42720650000420679 /* HammertimeTests.swift */; };
 		4F117FA62720650000420679 /* Hammertime.h in Headers */ = {isa = PBXBuildFile; fileRef = 4F117F982720650000420679 /* Hammertime.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		4F117FB3272162BB00420679 /* Foundation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FB2272162BB00420679 /* Foundation.swift */; };
+		4F117FB62721631800420679 /* HTScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FB5272162F000420679 /* HTScreen.swift */; };
+		4F117FB92721639300420679 /* Private-CoreGraphics.h in Headers */ = {isa = PBXBuildFile; fileRef = 4F117FB82721636C00420679 /* Private-CoreGraphics.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		4F117FBB2723675B00420679 /* CGDirectDisplayID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FBA2723675B00420679 /* CGDirectDisplayID.swift */; };
+		4F117FBD2724D34E00420679 /* HTScreenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F117FBC2724D34E00420679 /* HTScreenManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +34,11 @@
 		4F117F992720650000420679 /* Hammertime.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Hammertime.docc; sourceTree = "<group>"; };
 		4F117F9F2720650000420679 /* HammertimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HammertimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F117FA42720650000420679 /* HammertimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammertimeTests.swift; sourceTree = "<group>"; };
+		4F117FB2272162BB00420679 /* Foundation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Foundation.swift; sourceTree = "<group>"; };
+		4F117FB5272162F000420679 /* HTScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTScreen.swift; sourceTree = "<group>"; };
+		4F117FB82721636C00420679 /* Private-CoreGraphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Private-CoreGraphics.h"; sourceTree = "<group>"; };
+		4F117FBA2723675B00420679 /* CGDirectDisplayID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGDirectDisplayID.swift; sourceTree = "<group>"; };
+		4F117FBC2724D34E00420679 /* HTScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTScreenManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +82,9 @@
 			isa = PBXGroup;
 			children = (
 				4F117F982720650000420679 /* Hammertime.h */,
+				4F117FB72721635200420679 /* Headers */,
+				4F117FB4272162E500420679 /* Classes */,
+				4F117FB1272162A600420679 /* Extensions */,
 				4F117F992720650000420679 /* Hammertime.docc */,
 			);
 			path = Hammertime;
@@ -85,6 +98,32 @@
 			path = HammertimeTests;
 			sourceTree = "<group>";
 		};
+		4F117FB1272162A600420679 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				4F117FB2272162BB00420679 /* Foundation.swift */,
+				4F117FBA2723675B00420679 /* CGDirectDisplayID.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		4F117FB4272162E500420679 /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				4F117FB5272162F000420679 /* HTScreen.swift */,
+				4F117FBC2724D34E00420679 /* HTScreenManager.swift */,
+			);
+			path = Classes;
+			sourceTree = "<group>";
+		};
+		4F117FB72721635200420679 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				4F117FB82721636C00420679 /* Private-CoreGraphics.h */,
+			);
+			path = Headers;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -92,6 +131,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F117FB92721639300420679 /* Private-CoreGraphics.h in Headers */,
 				4F117FA62720650000420679 /* Hammertime.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -194,6 +234,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F117FB62721631800420679 /* HTScreen.swift in Sources */,
+				4F117FB3272162BB00420679 /* Foundation.swift in Sources */,
+				4F117FBB2723675B00420679 /* CGDirectDisplayID.swift in Sources */,
+				4F117FBD2724D34E00420679 /* HTScreenManager.swift in Sources */,
 				4F117F9A2720650000420679 /* Hammertime.docc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -358,8 +402,11 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_CFLAGS = "-DUSE_PRIVATE_API";
+				OTHER_SWIFT_FLAGS = "-DUSE_PRIVATE_API";
 				PRODUCT_BUNDLE_IDENTIFIER = net.tenshu.Hammertime;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				RUN_DOCUMENTATION_COMPILER = YES;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -386,8 +433,11 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_CFLAGS = "-DUSE_PRIVATE_API";
+				OTHER_SWIFT_FLAGS = "-DUSE_PRIVATE_API";
 				PRODUCT_BUNDLE_IDENTIFIER = net.tenshu.Hammertime;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				RUN_DOCUMENTATION_COMPILER = YES;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -397,6 +447,7 @@
 		4F117FAD2720650000420679 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -418,6 +469,7 @@
 		4F117FAE2720650000420679 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;

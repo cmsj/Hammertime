@@ -15,4 +15,4 @@ FOUNDATION_EXPORT const unsigned char HammertimeVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <Hammertime/PublicHeader.h>
 
-
+#import <Hammertime/Private-CoreGraphics.h>
