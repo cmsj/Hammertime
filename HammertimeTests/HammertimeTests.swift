@@ -18,6 +18,7 @@ class HammertimeTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
+    // MARK: - HTScreenManager tests
     func testGetMainScreen() throws {
         let mainScreen = HTScreenManager.mainScreen()
 
@@ -27,6 +28,32 @@ class HammertimeTests: XCTestCase {
         XCTAssertTrue([0, 90, 180, 270].contains(mainScreen?.rotation))
     }
 
+    func testEqualityOverride() throws {
+        XCTAssertEqual(HTScreenManager.mainScreen(), HTScreenManager.mainScreen())
+    }
+
+    func testAllScreens() throws {
+        let allScreens = HTScreenManager.allScreens()
+
+        XCTAssertGreaterThan(allScreens.count, 0)
+        XCTAssertTrue(allScreens.contains(HTScreenManager.mainScreen()!))
+    }
+
+    func testPrivateAccessibilities() throws {
+        let manager = HTScreenManager.shared
+
+        let forceToGray = !manager.forceToGrey
+        manager.forceToGrey = forceToGray
+        XCTAssertEqual(forceToGray, manager.forceToGrey)
+        manager.forceToGrey = !forceToGray
+
+        let invertedPolarity = !manager.invertedPolarity
+        manager.invertedPolarity = invertedPolarity
+        XCTAssertEqual(invertedPolarity, manager.invertedPolarity)
+        manager.invertedPolarity = !invertedPolarity
+    }
+
+    // MARK: - HTScreen tests
     func testBrightness() throws {
         let mainScreen = HTScreenManager.mainScreen()
 
@@ -43,8 +70,8 @@ class HammertimeTests: XCTestCase {
 
     func testSnapshot() throws {
         let mainScreen = HTScreenManager.mainScreen()
-
-        let snapshot = mainScreen?.snapshot()
-        XCTAssertNotNil(snapshot)
+        XCTAssertNotNil(mainScreen?.snapshot())
+        XCTAssertNotNil(mainScreen?.snapshotForRect(rect:mainScreen!.frame))
+        XCTAssertNil(mainScreen?.snapshotForRect(rect:NSZeroRect))
     }
 }

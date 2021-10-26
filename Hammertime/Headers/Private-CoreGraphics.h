@@ -33,6 +33,12 @@ void CGSConfigureDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID displa
 void CGSGetNumberOfDisplayModes(CGDirectDisplayID display, int *nModes);
 void CGSGetDisplayModeDescriptionOfLength(CGDirectDisplayID display, int idx, CGSDisplayMode *mode, int length);
 
+// CoreGraphics private accessibility APIs
+CG_EXTERN bool CGDisplayUsesForceToGray(void);
+CG_EXTERN void CGDisplayForceToGray(bool forceToGray);
+CG_EXTERN bool CGDisplayUsesInvertedPolarity(void);
+CG_EXTERN void CGDisplaySetInvertedPolarity(bool invertedPolarity);
+
 // IOKit private APIs
 enum {
     // from <IOKit/graphics/IOGraphicsTypesPrivate.h>
