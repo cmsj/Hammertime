@@ -202,6 +202,11 @@ class HTScreenManager: NSObject {
         currentGammasCache.removeAll()
     }
 
+    /// Reset all screens to OS configuration. This will undo any changes made to HTScreen objects with `permanent` arguments set to false
+    func restorePermanentDisplayConfiguration() {
+        CGRestorePermanentDisplayConfiguration()
+    }
+
     // MARK: - Private CoreGraphics API use beyond this point
 
     /// Forces displays to use greyscale

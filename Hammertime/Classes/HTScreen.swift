@@ -58,7 +58,7 @@ class HTScreen: NSObject {
             screen.frame
         }
     }
-    /// Visible frame of the screen
+    /// Frame of the screen not including the menubar and dock
     var visibleFrame: NSRect {
         get {
             screen.visibleFrame
@@ -99,16 +99,30 @@ class HTScreen: NSObject {
     ///   - aScreen: The screen that this screen should copy
     ///   - permanent: If true, screen mirroring is configured permanently. If false, screen mirroring will be forgotten when logging out.
     /// - Returns: True if mirroring was started correctly, otherwise False
-    func mirrorOf(_ aScreen: HTScreen, permanent: Bool = false) -> Bool {
+    func becomeMirrorTarget(_ aScreen: HTScreen, permanent: Bool = false) -> Bool {
         var config: CGDisplayConfigRef?
         var result: CGError
 
         CGBeginDisplayConfiguration(&config)
         result = CGConfigureDisplayMirrorOfDisplay(config, id, aScreen.id)
+        if (result != .success) {
+            CGCancelDisplayConfiguration(config)
+            // FIXME: Log errors
+            return false
+        }
         CGCompleteDisplayConfiguration(config, permanent ? CGConfigureOption.permanently : CGConfigureOption.forSession)
+        return true
+    }
 
-        // FIXME: Log errors
-        return result == .success
+    /// If this screen is acting as a mirror of another screen, this contains an HTScreen for the source screen
+    var mirrorSource: HTScreen? {
+        get {
+            let sourceID = CGDisplayMirrorsDisplay(id)
+
+            return HTScreenManager.allScreens().first { aScreen in
+                aScreen.id == sourceID
+            }
+        }
     }
 
     /// Stops this screen mirroring another screen
@@ -120,10 +134,13 @@ class HTScreen: NSObject {
 
         CGBeginDisplayConfiguration(&config)
         result = CGConfigureDisplayMirrorOfDisplay(config, id, kCGNullDirectDisplay)
+        if (result != .success) {
+            CGCancelDisplayConfiguration(config)
+            // FIXME: Log errors
+            return false
+        }
         CGCompleteDisplayConfiguration(config, permanent ? CGConfigureOption.permanently : CGConfigureOption.forSession)
-
-        // FIXME: Log errors
-        return result == .success
+        return true
     }
 
     /// Sets the origin of this screen within the global screen coordinate space. The origin of the primary screen is (0,0). The new origin set here is placed as close as possible to the requested location, without overlapping or leaving a gap between screens. Note that if this screen is part of a mirrored set, the mirroring may be removed
@@ -143,35 +160,7 @@ class HTScreen: NSObject {
         return result == .success
     }
 
-    /// Get or set the rotation of the screen. Valid values are: 0, 90, 180, 270
-    var rotation: Int {
-        get {
-            Int(CGDisplayRotation(id))
-        }
-        set {
-            var rotation: Int
-            switch (newValue) {
-            case 0:
-                rotation = kIOScaleRotate0
-            case 90:
-                rotation = kIOScaleRotate90
-            case 180:
-                rotation = kIOScaleRotate180
-            case 270:
-                rotation = kIOScaleRotate270
-            default:
-                return
-            }
-
-            let servicePort = id.getIOService()
-            if (servicePort != 0) {
-                let options = IOOptionBits((kIOFBSetTransform | (rotation) << 16))
-                IOServiceRequestProbe(servicePort, options)
-            }
-        }
-    }
-
-    /// Sets this screen as the primary screen (i.e. contain the menubar and dock)
+    /// Sets this screen as the primary screen (ie the screen whose top left is at (0,0) in the global screen coordinates space).
     /// - Returns: True if the operation succeded, otherwise false
     func setPrimary() -> Bool {
         if (CGMainDisplayID() == id) {
@@ -222,6 +211,11 @@ class HTScreen: NSObject {
         return true
     }
 
+    /// Set the gamma of the screen
+    /// - Parameters:
+    ///   - whitepoint: An HTGammaPoint containing float values for the red/green/blue values of the desired white point of the screen
+    ///   - blackpoint: An HTGammaPoint containing float values for the red/green/blue values of the desired black point of the screen
+    /// - Returns: True if the operation succeeded, otherwise False
     func setGamma(whitepoint: HTGammaPoint, blackpoint: HTGammaPoint) -> Bool {
         guard let originalGamma = HTScreenManager.shared.getCachedGammasForScreen(id, cacheType: .original) else {
             // FIXME: Log error
@@ -254,6 +248,37 @@ class HTScreen: NSObject {
         return true
     }
 
+    // MARK: - Private API use beyond this point
+
+    /// Get or set the rotation of the screen. Valid values are: 0, 90, 180, 270
+    var rotation: Int {
+        get {
+            Int(CGDisplayRotation(id))
+        }
+        set {
+            var rotation: Int
+            switch (newValue) {
+            case 0:
+                rotation = kIOScaleRotate0
+            case 90:
+                rotation = kIOScaleRotate90
+            case 180:
+                rotation = kIOScaleRotate180
+            case 270:
+                rotation = kIOScaleRotate270
+            default:
+                return
+            }
+
+            let servicePort = id.getIOService()
+            if (servicePort != 0) {
+                let options = IOOptionBits((kIOFBSetTransform | (rotation) << 16))
+                IOServiceRequestProbe(servicePort, options)
+            }
+        }
+    }
+
+    /// Brightness of the screen between 0.0 and 1.0
     var brightness: Float {
         get {
             var brightness: Float = 0.0
@@ -265,8 +290,13 @@ class HTScreen: NSObject {
         }
     }
 
-    // MARK: - Private CoreGraphics API use beyond this point
-    var currentMode: CGSDisplayMode {
+    /// The current screen mode as a CGSDisplayMode struct. Available struct members are:
+    ///   * width - Width of the screen in points
+    ///   * height - Height of the screen in points
+    ///   * density - The scale of the screen, `1` for native pixel scale, `2` for "Retina" (HiDPI)
+    ///   * freq - Vertical refresh rate in Hz
+    ///   * depth - Color bit depth of the screen
+    var currentScreenMode: CGSDisplayMode {
         get {
             var modeID: Int32 = 0
             var mode = CGSDisplayMode()
@@ -279,11 +309,14 @@ class HTScreen: NSObject {
         }
         set {
             // FIXME: Decide if this should be settable. We can do it, but it means no result for the caller
-            _ = setMode(newValue)
+            _ = setScreenMode(newValue)
         }
     }
 
-    func setMode(_ mode: CGSDisplayMode) -> Bool {
+    /// Set the screen mode
+    /// - Parameter mode: A CGSDisplayMode struct, see `currentMode` for information on the struct members
+    /// - Returns: True if the operation succeded, otherwise False
+    func setScreenMode(_ mode: CGSDisplayMode) -> Bool {
         var config: CGDisplayConfigRef?
         CGBeginDisplayConfiguration(&config)
         CGSConfigureDisplayMode(config, id, Int32(mode.modeNumber))
@@ -291,8 +324,8 @@ class HTScreen: NSObject {
     }
 
     /// Fetch all of the available screen modes for this screen. Note that not all modes are guaranteed to be valid.
-    /// - Returns: An array of CGSDisplayMode structs
-    func availableModes() -> [CGSDisplayMode] {
+    /// - Returns: An array of CGSDisplayMode structs. See `currentMode` for information on the struct members
+    func availableScreenModes() -> [CGSDisplayMode] {
         var info = [CGSDisplayMode]()
         var numModes: Int32 = 0
         CGSGetNumberOfDisplayModes(id, &numModes)

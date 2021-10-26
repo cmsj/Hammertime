@@ -28,6 +28,11 @@ class HammertimeTests: XCTestCase {
         XCTAssertTrue([0, 90, 180, 270].contains(mainScreen?.rotation))
     }
 
+    func testPrimaryScreen() throws {
+        let primaryScreen = HTScreenManager.primaryScreen()
+        XCTAssertEqual(primaryScreen, HTScreenManager.allScreens().first!)
+    }
+
     func testEqualityOverride() throws {
         XCTAssertEqual(HTScreenManager.mainScreen(), HTScreenManager.mainScreen())
     }
@@ -53,7 +58,16 @@ class HammertimeTests: XCTestCase {
         manager.invertedPolarity = !invertedPolarity
     }
 
+    func testInitialGammaCaching() throws {
+        let manager = HTScreenManager.shared
+
+        XCTAssertGreaterThan(manager.originalGammasCache.count, 0)
+        XCTAssertEqual(manager.currentGammasCache.count, 0)
+        XCTAssertNotNil(manager.getCachedGammasForScreen(HTScreenManager.mainScreen()!.id, cacheType: .original))
+    }
+
     // MARK: - HTScreen tests
+
     func testBrightness() throws {
         let mainScreen = HTScreenManager.mainScreen()
 
@@ -73,5 +87,11 @@ class HammertimeTests: XCTestCase {
         XCTAssertNotNil(mainScreen?.snapshot())
         XCTAssertNotNil(mainScreen?.snapshotForRect(rect:mainScreen!.frame))
         XCTAssertNil(mainScreen?.snapshotForRect(rect:NSZeroRect))
+    }
+
+    func testScreenModes() throws {
+        let mainScreen = HTScreenManager.mainScreen()!
+
+        XCTAssertGreaterThan(mainScreen.availableScreenModes().count, 0)
     }
 }
