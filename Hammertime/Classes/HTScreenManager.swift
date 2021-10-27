@@ -7,6 +7,7 @@
 
 import Foundation
 import Cocoa
+import OSLog
 
 /// Stores tables of gamma values for a screen.
 struct HTGammaTable {
@@ -17,7 +18,7 @@ struct HTGammaTable {
 }
 
 /// This is an unpleasant hack for determining whether something cares about the cached initial gammas for a screen, or the gammas we have applied
-enum HTGammaType {
+enum HTGammaType: String {
     case original
     case current
 }
@@ -31,6 +32,7 @@ private func screenReconfigurationCallback(screenID: CGDirectDisplayID, flags: C
 class HTScreenManager: NSObject {
     static var shared = HTScreenManager()
 
+    var log: Logger
     var originalGammasCache: [HTGammaTable]
     var currentGammasCache: [HTGammaTable]
 
@@ -38,19 +40,22 @@ class HTScreenManager: NSObject {
     override init() {
         originalGammasCache = []
         currentGammasCache = []
+        log = Logger(subsystem: "org.hammerspoon.Hammertime", category: "HTScreenManager")
 
         super.init()
-
+        log.debug("Initialising")
         start()
     }
 
     // MARK: - Lifecycle management
     func start() {
+        log.debug("Starting")
         cacheAllInitialScreenGammas()
         CGDisplayRegisterReconfigurationCallback(screenReconfigurationCallback, nil)
     }
 
     func stop() {
+        log.debug("Stopping")
         CGDisplayRemoveReconfigurationCallback(screenReconfigurationCallback, nil)
         restoreAllInitialGammas()
     }
@@ -59,17 +64,22 @@ class HTScreenManager: NSObject {
     func screenDidReconfigure(_ screenID: CGDirectDisplayID, withFlags flags:CGDisplayChangeSummaryFlags) {
         if (flags.contains(.addFlag)) {
             // A new screen appeared, cache its gamma
+            log.debug("Screen added: \(screenID)")
             cacheInitialScreenGamma(screenID)
         } else if (flags.contains(.removeFlag)) {
             // A screen was removed. Remove its cached gamma values
+            log.debug("Screen removed: \(screenID)")
             removeCachedGammasForScreen(screenID, cacheType: .original)
             removeCachedGammasForScreen(screenID, cacheType: .current)
         } else if (flags.contains(.disabledFlag)) {
             // A screen was disabled. Remove any cached gamma values we applied to it
+            log.debug("Screen disabled: \(screenID)")
             removeCachedGammasForScreen(screenID, cacheType: .current)
         } else if (flags.contains(.enabledFlag) || flags.contains(.beginConfigurationFlag)) {
             // NOOP
+            log.debug("Screen enabled or began configuration: \(screenID)")
         } else {
+            log.debug("Unknown screen configuration event on: \(screenID): \(flags.rawValue)")
             // Some kind of display reconfiguration occurred, but it didn't involve any hardware being added/removed
             // We'll re-apply our current gammas if we have them.
             // We also have to wait a few seconds to do this, so the display reconfiguration can complete.
@@ -82,6 +92,7 @@ class HTScreenManager: NSObject {
     // MARK: - Internal API
     /// Store all of the current gamma tables for all attached screens
     private func cacheAllInitialScreenGammas() {
+        log.debug("Caching all initial screen gammas")
         // Get the number of screens
         var numScreens = CGDisplayCount()
         CGGetActiveDisplayList(0, nil, &numScreens)
@@ -97,6 +108,7 @@ class HTScreenManager: NSObject {
 
     /// Store the current gamma tables for a single screen
     private func cacheInitialScreenGamma(_ screenID: CGDirectDisplayID) {
+        log.debug("Caching screen gamma for: \(screenID)")
         let capacity: UInt32 = CGDisplayGammaTableCapacity(screenID)
         var count: UInt32 = 0
 
@@ -115,6 +127,7 @@ class HTScreenManager: NSObject {
 
     /// Remove a cached gamma table for a single screen
     private func removeCachedGammasForScreen(_ screenID: CGDirectDisplayID, cacheType gammaType:HTGammaType) {
+        log.debug("Removing cached gamma for: \(screenID) type: \(gammaType.rawValue)")
         switch (gammaType) {
         case .original:
             originalGammasCache = originalGammasCache.filter { oldTable in
@@ -130,6 +143,7 @@ class HTScreenManager: NSObject {
 
     /// Re-apply a gamma table we have previously set, if it exists in our cache
     private func reapplyCachedGamma(_ screenID: CGDirectDisplayID) {
+        log.debug("Reapplying cached gamma for: \(screenID)")
         if let gamma = getCachedGammasForScreen(screenID, cacheType: .current) {
             let result = CGSetDisplayTransferByTable(screenID, UInt32(gamma.red.count), gamma.red, gamma.green, gamma.blue)
             if (result != .success) {

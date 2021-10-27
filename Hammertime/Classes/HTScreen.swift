@@ -6,6 +6,7 @@
 //
 
 import Cocoa
+import OSLog
 
 struct HTGammaPoint {
     var red: Float
@@ -18,10 +19,13 @@ class HTScreen: NSObject {
     // MARK: - Simple properties
     private static let screenIDKey = NSDeviceDescriptionKey(rawValue: "NSScreenNumber")
     let screen: NSScreen
+    let log: Logger
 
     // MARK: - Initialiser
     init(_ screen: NSScreen) {
         self.screen = screen
+        log = Logger(subsystem: "org.hammerspoon.Hammertime", category: "HTScreen")
+        log.debug("Initialised HTScreen for: \(screen.localizedName)")
     }
 
     // MARK: - Overrides
@@ -72,11 +76,11 @@ class HTScreen: NSObject {
         set {
             do {
                 if (newValue != nil) {
+                    log.debug("Attempting to set desktop image for \(self.id):\(self.name): \(newValue.debugDescription)")
                     try NSWorkspace.shared.setDesktopImageURL(newValue!, for: screen)
                 }
             } catch {
-                // FIXME: Do proper logging here
-                print("Setting desktop image failed: \(error.localizedDescription)")
+                log.error("Unable to set desktop image for \(self.id):\(self.name): \(error.localizedDescription)")
             }
         }
     }
@@ -90,6 +94,7 @@ class HTScreen: NSObject {
         if let cgImage = CGDisplayCreateImage(id, rect: rect) {
             return NSImage(cgImage: cgImage, size: NSZeroSize)
         } else {
+            log.error("Unable to generate snapshot for: \(self.id):\(self.name) \(rect.debugDescription)")
             return nil
         }
     }
@@ -107,7 +112,7 @@ class HTScreen: NSObject {
         result = CGConfigureDisplayMirrorOfDisplay(config, id, aScreen.id)
         if (result != .success) {
             CGCancelDisplayConfiguration(config)
-            // FIXME: Log errors
+            log.error("Unable to initiate mirroring of \(aScreen.id):\(aScreen.name) to \(self.id):\(self.name): \(result.rawValue)")
             return false
         }
         CGCompleteDisplayConfiguration(config, permanent ? CGConfigureOption.permanently : CGConfigureOption.forSession)
@@ -136,7 +141,7 @@ class HTScreen: NSObject {
         result = CGConfigureDisplayMirrorOfDisplay(config, id, kCGNullDirectDisplay)
         if (result != .success) {
             CGCancelDisplayConfiguration(config)
-            // FIXME: Log errors
+            log.error("Unable to stop mirroring of \(self.id):\(self.name): \(result.rawValue)")
             return false
         }
         CGCompleteDisplayConfiguration(config, permanent ? CGConfigureOption.permanently : CGConfigureOption.forSession)
@@ -154,6 +159,11 @@ class HTScreen: NSObject {
 
         CGBeginDisplayConfiguration(&config)
         result = CGConfigureDisplayOrigin(config, id, x, y)
+        if (result != .success) {
+            CGCancelDisplayConfiguration(config)
+            log.error("Unable to set origin of \(self.id):\(self.name) to (\(x),\(y)): \(result.rawValue)")
+            return false
+        }
         CGCompleteDisplayConfiguration(config, .permanently)
 
         // FIXME: Log errors
@@ -165,44 +175,41 @@ class HTScreen: NSObject {
     func setPrimary() -> Bool {
         if (CGMainDisplayID() == id) {
             // noop, we are already the main screen
+            log.debug("Ignoring setPrimary() on \(self.id):\(self.name) - we are already primary")
             return true;
         }
 
         var config: CGDisplayConfigRef?
-        var dErr: CGDisplayErr
+        var result: CGDisplayErr
         var screenCount: UInt32 = 0
 
-        dErr = CGGetOnlineDisplayList(0, nil, &screenCount)
-        if (dErr != .success) {
-            // FIXME: Log an error
+        result = CGGetOnlineDisplayList(0, nil, &screenCount)
+        if (result != .success) {
+            log.error("Unable to fetch online display list count: \(result.rawValue)")
             return false
         }
         var onlineScreens: [CGDirectDisplayID] = Array(repeating: 0, count: Int(screenCount))
-        dErr = CGGetOnlineDisplayList(screenCount, &onlineScreens, &screenCount)
-        if (dErr != .success) {
-            // FIXME: Log an error
+        result = CGGetOnlineDisplayList(screenCount, &onlineScreens, &screenCount)
+        if (result != .success) {
+            log.error("Unable to fetch online display list: \(result.rawValue)")
             return false
         }
 
         let deltaX = -CGDisplayBounds(id).minX
         let deltaY = -CGDisplayBounds(id).minY
 
-        dErr = CGBeginDisplayConfiguration(&config)
-        if (dErr != .success) {
-            // FIXME: Log an error
-            return false
-        }
+        CGBeginDisplayConfiguration(&config)
 
         for dID in onlineScreens {
             if (dID) == 0 {
                 continue
             }
-            dErr = CGConfigureDisplayOrigin(config, dID,
+            result = CGConfigureDisplayOrigin(config, dID,
                                             Int32(CGDisplayBounds(dID).minX + deltaX),
                                             Int32(CGDisplayBounds(dID).minY + deltaY))
-            if (dErr != .success) {
+            if (result != .success) {
                 CGCancelDisplayConfiguration(config)
-                // FIXME: Log an error
+                log.error("Unable to configure display origin for: \(dID): \(result.rawValue)")
                 return false
             }
         }
@@ -218,7 +225,7 @@ class HTScreen: NSObject {
     /// - Returns: True if the operation succeeded, otherwise False
     func setGamma(whitepoint: HTGammaPoint, blackpoint: HTGammaPoint) -> Bool {
         guard let originalGamma = HTScreenManager.shared.getCachedGammasForScreen(id, cacheType: .original) else {
-            // FIXME: Log error
+            log.error("Unable to fetch initial cached gammas for: \(self.id):\(self.name)")
             return false
         }
 
@@ -241,7 +248,7 @@ class HTScreen: NSObject {
 
         let result = CGSetDisplayTransferByTable(id, UInt32(count), redTable, greenTable, blueTable)
         if (result != .success) {
-            // FIXME: Log error
+            log.error("Unable to set gammas for: \(self.id):\(self.name): \(result.rawValue)")
             return false
         }
 
@@ -273,7 +280,10 @@ class HTScreen: NSObject {
             let servicePort = id.getIOService()
             if (servicePort != 0) {
                 let options = IOOptionBits((kIOFBSetTransform | (rotation) << 16))
-                IOServiceRequestProbe(servicePort, options)
+                let result = IOServiceRequestProbe(servicePort, options)
+                if (result != KERN_SUCCESS) {
+                    log.error("Unable to set rotation for: \(self.id):\(self.name): \(result)")
+                }
             }
         }
     }
